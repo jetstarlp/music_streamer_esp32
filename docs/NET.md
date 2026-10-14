@@ -57,7 +57,7 @@ Einstellungen: menuconfig → „Music Streamer network (net)“. Die Firmware-V
 4. Hochladen, eine der zwei Varianten (Repository muss öffentlich sein; die Firmware enthält keine Geheimnisse):
    - **GitHub Release** (empfohlen): Release mit Tag `v1.0.1` anlegen, beide Dateien als Assets anhängen; `--base-url https://github.com/<user>/<repo>/releases/download/v1.0.1`. Manifest-URL im Gerät: `https://github.com/<user>/<repo>/releases/latest/download/manifest.json` (zeigt immer auf das neueste Release).
    - **GitHub Pages:** beide Dateien nach `<repo>/ms-waveshare/` (Pages-Branch); `--base-url https://<user>.github.io/<repo>/ms-waveshare`, Manifest-URL `https://<user>.github.io/<repo>/ms-waveshare/manifest.json`.
-5. Die Manifest-URL steht in `sdkconfig.defaults` (`CONFIG_MS_OTA_MANIFEST_URL`): `https://github.com/jetstarlp/music_streamer_esp32/releases/latest/download/manifest.json`. Das Repository darf deshalb nicht umbenannt oder privat gemacht werden. Pro Gerät überschreibbar mit `ota url …` auf der Konsole.
+5. **So ist es eingerichtet (seit 14.10.2026):** Updates liegen im Branch `ota` des öffentlichen Repositorys `jetstarlp/music_streamer_esp32` und werden über `raw.githubusercontent.com` geladen. Manifest-URL in der Firmware (`CONFIG_MS_OTA_MANIFEST_URL`): `https://raw.githubusercontent.com/jetstarlp/music_streamer_esp32/ota/manifest.json`. Veröffentlichen: `--base-url https://raw.githubusercontent.com/jetstarlp/music_streamer_esp32/ota`, dann beide Dateien aus `dist/ota/` in den Branch `ota` kopieren, committen, pushen (alte .bin dort löschen). Das Repository darf nicht umbenannt oder privat gemacht und der Branch `ota` nicht gelöscht werden. Pro Gerät überschreibbar mit `ota url …` auf der Konsole.
 
 ## 6. Uhrzeit
 

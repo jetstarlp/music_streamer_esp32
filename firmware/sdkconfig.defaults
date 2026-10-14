@@ -18,8 +18,9 @@ CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 # starts the previous one again. Takes effect once the bootloader is flashed
 # over USB (OTA never replaces the bootloader).
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
-# Update source: GitHub release "latest" of the public repository
-CONFIG_MS_OTA_MANIFEST_URL="https://github.com/jetstarlp/music_streamer_esp32/releases/latest/download/manifest.json"
+# Update source: branch "ota" of the public repository (manifest.json + app
+# image, served by raw.githubusercontent.com; docs/NET.md section 5)
+CONFIG_MS_OTA_MANIFEST_URL="https://raw.githubusercontent.com/jetstarlp/music_streamer_esp32/ota/manifest.json"
 # Firmware version: firmware/version.txt (semver, compared by the OTA check).
 
 # --- CPU ----------------------------------------------------------------------
