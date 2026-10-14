@@ -1,0 +1,45 @@
+Repository: philippe44/cspot (third_party/cspot), base 60cf17296e2ac9b903e86b92271cb6b4989a80af
+Kind:       robustness (crash fix), NOT required to build
+Status:     REFERENCE ONLY - the firmware build applies the same change as a source
+            overlay (source_overlays.cmake, overlay 3); the submodule stays unmodified.
+Check:      git -C third_party/cspot apply --check <this file>
+
+ApResolve::fetchFirstApAddress() dereferences json["ap_list"][0] without
+checking that the answer of https://apresolve.spotify.com/ is the expected
+JSON. A captive portal, an intercepting proxy, an HTTP error page or an empty
+body ends in a NULL pointer access (cJSON build only):
+
+  Guru Meditation Error: Core  1 panic'ed (LoadProhibited). EXCVADDR: 0x00000010
+  cspot::ApResolve::fetchFirstApAddress() at ApResolve.cpp:35
+  cspot::Session::connectWithRandomAp() at Session.cpp:65
+
+Reproduced in QEMU (ESP-IDF 5.5.5). Throwing instead lets the existing callers
+retry: MercurySession::reconnect() catches everything and retries after 5 s.
+
+diff --git a/cspot/src/ApResolve.cpp b/cspot/src/ApResolve.cpp
+index 0325150..25edc39 100644
+--- a/cspot/src/ApResolve.cpp
++++ b/cspot/src/ApResolve.cpp
+@@ -3,6 +3,7 @@
+ #include <initializer_list>  // for initializer_list
+ #include <map>               // for operator!=, operator==
+ #include <memory>            // for allocator, unique_ptr
++#include <stdexcept>         // for runtime_error
+ #include <string_view>       // for string_view
+ #include <vector>            // for vector
+ 
+@@ -31,8 +32,12 @@ std::string ApResolve::fetchFirstApAddress() {
+   // parse json with nlohmann
+ #ifdef BELL_ONLY_CJSON
+   cJSON* json = cJSON_ParseWithLength(responseStr.data(), responseStr.size());
+-  auto ap_string = std::string(
+-      cJSON_GetArrayItem(cJSON_GetObjectItem(json, "ap_list"), 0)->valuestring);
++  cJSON* ap = cJSON_GetArrayItem(cJSON_GetObjectItem(json, "ap_list"), 0);
++  if (!cJSON_IsString(ap) || ap->valuestring == nullptr) {
++    cJSON_Delete(json);
++    throw std::runtime_error("apresolve: unexpected response");
++  }
++  auto ap_string = std::string(ap->valuestring);
+   cJSON_Delete(json);
+   return ap_string;
+ #else

@@ -1,0 +1,12 @@
+# sha256 (CRLF folded to LF) of the inputs the checked-in *.pb.[ch] were generated from.
+# Written by tools/gen_protos.py, verified by CMakeLists.txt. Do not edit.
+7a97bfed064c58c0f8fb827cc3f3ce1f1267cd54f1f4041c6a2c535fe7e3d9af  authentication.options
+43ef157b84a3b1a6f07cd25719cac7e995a04d952677320dd673cdcef2debd1c  authentication.proto
+e7b60bb6e68a030671847fb30363aac44f30ca83379a210f6c8f9647dbdba4cc  keyexchange.options
+028d4aa34806ff12962ff925f67117ffb3ea37f98a7235cf929f2b28ce4f8507  keyexchange.proto
+8367be0057f586f2b447c6f994cd82f7c7828ee286b0f00f3841d71be420ca1e  mercury.options
+de16912024e9b6d525e5282c88b42604b8f81b0ef76ef8a54cf67971868f098b  mercury.proto
+a27dd5b7353a21885167952399e3bf4dc837e6e7d1ed9100843c459d6dfa2c9a  metadata.options
+0f6859433d05ba033f03f6b7f3a32a15940a64c715c3567c8d96681f46318d6a  metadata.proto
+fa8a8345ff4ef94688751ca3b7efdeb472d681129652e4be781c95e6ab7b4642  spirc.options
+922de11d0cb2ab13bc8b8b0ed6c5d1581e321869357a9f16fc1dd09d15c39d58  spirc.proto

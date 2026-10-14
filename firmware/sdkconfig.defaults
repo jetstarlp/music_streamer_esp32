@@ -1,0 +1,100 @@
+# Music Streamer - default configuration (ESP-IDF v5.5.x, ESP32-S3R8, 16 MB flash)
+# Only options that differ from the ESP-IDF defaults are listed.
+# "sdkconfig" itself is generated from this file and is not under version control.
+
+CONFIG_IDF_TARGET="esp32s3"
+
+# --- Flash: W25Q128, 16 MB ---------------------------------------------------
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+# Flash mode is left at the IDF default (DIO). QIO is a possible later speed-up.
+
+# --- Partition table: two OTA slots + LittleFS, see partitions.csv -----------
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# --- OTA updates (components/net, docs/NET.md) ---------------------------------
+# A new firmware must confirm itself (net_ota_mark_valid) or the bootloader
+# starts the previous one again. Takes effect once the bootloader is flashed
+# over USB (OTA never replaces the bootloader).
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+# Update source: GitHub release "latest" of the public repository
+CONFIG_MS_OTA_MANIFEST_URL="https://github.com/jetstarlp/music_streamer_esp32/releases/latest/download/manifest.json"
+# Firmware version: firmware/version.txt (semver, compared by the OTA check).
+
+# --- CPU ----------------------------------------------------------------------
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+# -O2: Vorbis decoding (tremor, integer) and TLS benefit; flash space is plentiful.
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+
+# --- Console: native USB (GPIO19/20), no UART bridge on the board ------------
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+
+# --- PSRAM: 8 MB octal @ 80 MHz ----------------------------------------------
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+# malloc() may return PSRAM: requests <= 1 kB stay internal, larger ones go to
+# PSRAM first; 64 kB of internal RAM are kept back for DMA/driver allocations.
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=1024
+CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=65536
+# WiFi/LwIP buffers and mbedTLS allocations go to PSRAM when possible.
+CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP=y
+CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC=y
+# cspot/bell create their tasks with xTaskCreateStatic and a PSRAM stack
+# (up to 48 kB each). In ESP-IDF 5.5 the option is called
+# FREERTOS_TASK_CREATE_ALLOW_EXT_MEM; the IDF 4.x/5.0 name
+# CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY is still accepted as an alias
+# (components/freertos/sdkconfig.rename) and shows up in the generated sdkconfig.
+# Already "y" by default on the ESP32-S3 with PSRAM; listed because the
+# firmware does not work without it.
+CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM=y
+
+# --- C++: cspot/bell throw and catch exceptions ------------------------------
+CONFIG_COMPILER_CXX_EXCEPTIONS=y
+
+# --- FreeRTOS -----------------------------------------------------------------
+# 1 ms tick: cspot/bell sleep in small steps (vTaskDelay(ms / portTICK_PERIOD_MS)),
+# LVGL will want it too.
+CONFIG_FREERTOS_HZ=1000
+
+# --- TLS ----------------------------------------------------------------------
+# Spotify's CDN/API servers do not negotiate a smaller record size, keep 16 kB
+# for RX; 4 kB is enough for TX. Buffers live in PSRAM (see above).
+CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN=16384
+CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN=y
+CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN=4096
+# MBEDTLS_DYNAMIC_BUFFER is deliberately left off: with all mbedTLS allocations
+# in PSRAM (MBEDTLS_EXTERNAL_MEM_ALLOC above) it would save no internal RAM and
+# only add allocation churn to every TLS record.
+# Root CA bundle (ESP-IDF default set) for code that verifies server
+# certificates with esp_crt_bundle_attach(): the planned Web API client and OTA.
+# NOTE: cspot/bell do NOT use it - their TLS connections run unverified unless
+# bell::X509Bundle is initialised (see docs/SPIKE_REPORT.md, open risks).
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y
+
+# --- Network ------------------------------------------------------------------
+CONFIG_LWIP_MAX_SOCKETS=16
+# The mDNS component would otherwise register "mdns_*" console commands.
+CONFIG_MDNS_ENABLE_CONSOLE_CLI=n
+# WiFi modem power save is switched off at runtime: esp_wifi_set_ps(WIFI_PS_NONE)
+# in components/net/src/net_wifi.c (there is no Kconfig option for the runtime PS mode).
+
+# --- Main task ----------------------------------------------------------------
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=6144
+
+# --- Display + LVGL (see components/display/sdkconfig.lvgl) --------------------
+CONFIG_LV_COLOR_DEPTH_16=y
+# LVGL allocates in PSRAM (components/display/lv_mem_psram.c): the UI has ~900
+# small objects that would otherwise take 25-30 kB of internal RAM.
+CONFIG_LV_USE_CUSTOM_MALLOC=y
+CONFIG_LV_USE_CLIB_STRING=y
+CONFIG_LV_USE_CLIB_SPRINTF=y
+CONFIG_LV_DEF_REFR_PERIOD=16
+CONFIG_LV_FONT_MONTSERRAT_14=y
+CONFIG_LV_USE_QRCODE=y
+# Draw buffers live in scarce internal DMA RAM: 2 x 280 x 20 lines plus one for
+# the software rotation = ~34 kB (40 lines would be ~67 kB).
+CONFIG_MS_DISPLAY_BUFFER_LINES=20

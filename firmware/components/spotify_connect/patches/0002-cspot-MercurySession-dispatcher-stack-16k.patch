@@ -1,0 +1,24 @@
+Repository: philippe44/cspot (third_party/cspot), base 60cf17296e2ac9b903e86b92271cb6b4989a80af
+Kind:       robustness, NOT required to build; not verified on hardware
+Status:     REFERENCE ONLY - the firmware build applies the same change as a source
+            overlay (source_overlays.cmake, overlay 2); the submodule stays unmodified.
+Check:      git -C third_party/cspot apply --check <this file>
+
+After a connection loss the "mercury_dispatcher" task itself runs
+MercurySession::reconnect(): an HTTPS request to apresolve.spotify.com (TLS
+handshake) plus the Spotify key exchange. 4 kB of stack is very little for an
+mbedTLS 3.x handshake; the stack lives in PSRAM, so 16 kB costs no internal RAM.
+
+diff --git a/cspot/src/MercurySession.cpp b/cspot/src/MercurySession.cpp
+index d40983d..355914b 100644
+--- a/cspot/src/MercurySession.cpp
++++ b/cspot/src/MercurySession.cpp
+@@ -22,7 +22,7 @@
+ using namespace cspot;
+ 
+ MercurySession::MercurySession(std::shared_ptr<TimeProvider> timeProvider)
+-    : bell::Task("mercury_dispatcher", 4 * 1024, 3, 1) {
++    : bell::Task("mercury_dispatcher", 16 * 1024, 3, 1) {
+   this->timeProvider = timeProvider;
+ }
+ 

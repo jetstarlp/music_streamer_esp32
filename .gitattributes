@@ -1,0 +1,7 @@
+# Keep LF in the working tree on every platform: the checked-in nanopb output
+# and the hash manifest must be byte-identical on Windows and Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ttf binary
+*.bin binary

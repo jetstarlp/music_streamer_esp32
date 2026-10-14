@@ -1,0 +1,146 @@
+/*
+ * audio_out - PCM sink for the PCM5102A DAC.
+ *
+ *   producer task --audio_out_write()--> ring buffer (PSRAM) --> I2S interrupt
+ *                                           --> I2S DMA buffers --> DAC
+ *
+ * Fixed format: 16-bit signed little-endian, stereo interleaved (L,R), Philips
+ * I2S, no MCLK. The sample rate is set at init (Spotify: 44100 Hz). Samples are
+ * passed through unmodified at full volume (see audio_out_set_volume), no resampling.
+ *
+ * The I2S clocks run from audio_out_start() until audio_out_stop(). Whenever no
+ * audio is available (idle, paused, underrun) zeros are sent, so the
+ * DAC's clock-derived PLL stays locked and there are no clicks from clock
+ * starts/stops. The DAC's XSMT (soft mute) pin is sequenced around start/stop.
+ *
+ * Thread safety: audio_out_write() may be called by ONE producer task at a
+ * time. All other functions may be called from any task (not from ISRs).
+ */
+#pragma once
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include "esp_err.h"
+#include "freertos/FreeRTOS.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define AUDIO_OUT_CHANNELS          2
+#define AUDIO_OUT_BYTES_PER_FRAME   4   /* 2 channels x 16 bit */
+
+typedef struct {
+    uint32_t sample_rate_hz;      /* e.g. 44100 */
+    size_t   ring_buffer_bytes;   /* PCM buffer between producer and I2S; multiple of 4 */
+    size_t   prebuffer_bytes;     /* after an underrun, wait for this much audio before
+                                     resuming (0 = resume immediately) */
+} audio_out_config_t;
+
+/* 2 MB = ~11.9 s at 44.1 kHz; lives in PSRAM and bridges WiFi stalls.
+ * After an underrun ~0.37 s are collected before playback resumes. */
+#define AUDIO_OUT_DEFAULT_CONFIG() {        \
+    .sample_rate_hz    = 44100,             \
+    .ring_buffer_bytes = 2048 * 1024,       \
+    .prebuffer_bytes   = 256 * 1024,         \
+}
+
+typedef struct {
+    uint64_t frames_written;   /* frames accepted by audio_out_write() since init     */
+    uint64_t frames_played;    /* frames of real audio handed to the I2S driver       */
+    uint64_t frames_dropped;   /* frames discarded by flush/stop; at any time
+                                  written == played + dropped + buffered              */
+    uint32_t buffered_bytes;   /* audio currently waiting in the ring buffer          */
+    uint32_t underruns;        /* number of times the buffer ran dry while not paused */
+    bool     running;          /* between audio_out_start() and audio_out_stop()      */
+    bool     paused;
+    bool     muted;            /* state of the XSMT pin (true = muted)                */
+    uint32_t dma_underruns;    /* the I2S interrupt came so late that a DMA buffer was
+                                  replayed: an audible gap even with a full buffer    */
+    uint32_t dma_late;         /* the I2S interrupt was late but caught up (no gap)   */
+} audio_out_stats_t;
+
+/**
+ * Allocate the ring buffer, create the I2S channel and a helper task and
+ * configure the XSMT pin (DAC muted). No clocks are output yet.
+ */
+esp_err_t audio_out_init(const audio_out_config_t *config);
+
+/**
+ * Enable I2S: clocks start and zeros are sent; after ~10 ms the DAC is
+ * un-muted (XSMT high). Idempotent.
+ */
+esp_err_t audio_out_start(void);
+
+/**
+ * Mute the DAC (XSMT low), wait a few ms for its soft-mute ramp, then stop the
+ * I2S clocks. Buffered audio is discarded. Idempotent.
+ */
+esp_err_t audio_out_stop(void);
+
+/**
+ * Queue PCM data. Only whole frames are accepted.
+ *
+ * @param pcm      interleaved 16-bit stereo samples
+ * @param bytes    number of bytes in pcm
+ * @param timeout  how long to wait for free space when the buffer is full
+ * @return number of bytes accepted (multiple of 4, may be less than requested,
+ *         0 on timeout or when not initialised)
+ */
+size_t audio_out_write(const void *pcm, size_t bytes, TickType_t timeout);
+
+/** Drive the DAC's XSMT pin directly (true = muted). */
+esp_err_t audio_out_set_mute(bool mute);
+
+/**
+ * Pause/resume consumption of the ring buffer. While paused zeros are
+ * sent and audio_out_write() blocks/returns 0 once the buffer is full, which
+ * is exactly the back-pressure the Spotify decoder expects.
+ */
+void audio_out_set_paused(bool paused);
+
+/**
+ * Volume of the music (not of the test tone), as Spotify reports it:
+ * 0 = silent .. 65535 = full. Logarithmic curve over 50 dB; 65535 passes the
+ * samples bit-exact. Changes are ramped (no zipper noise). Default: 65535.
+ */
+void audio_out_set_volume(uint16_t volume);
+uint16_t audio_out_get_volume(void);
+
+/** Discard everything that is buffered but not yet played (seek, skip, stop). */
+void audio_out_flush(void);
+
+/** Snapshot of counters and state. */
+void audio_out_get_stats(audio_out_stats_t *out);
+
+/* ---- Test tone (bench tests) ---------------------------------------------
+ * A sine wave, same signal on both channels, generated by a helper task
+ * into its own buffer: it never competes with the producer of audio_out_write() for the
+ * ring buffer. While a tone plays, the ring buffer is not consumed (the
+ * producer sees back-pressure exactly as when paused) and the pause state is
+ * ignored; afterwards normal playback continues where it was. 10 ms fade-in
+ * and fade-out. The frame counters in audio_out_stats_t do not include tone
+ * frames. Arbitrating between a tone and real playback is up to the caller. */
+
+/**
+ * Start (or replace) a test tone.
+ *
+ * @param freq_hz      0 < freq_hz < sample_rate / 2
+ * @param dbfs         peak level, -100 .. 0 dBFS (0 dBFS = full scale, 32767)
+ * @param duration_ms  1 .. 3 600 000
+ * @return ESP_ERR_INVALID_STATE unless initialised and started,
+ *         ESP_ERR_INVALID_ARG for out-of-range parameters.
+ */
+esp_err_t audio_out_tone_start(float freq_hz, float dbfs, uint32_t duration_ms);
+
+/** Fade out and end a running tone. No-op when none is playing. */
+void audio_out_tone_stop(void);
+
+/** True from audio_out_tone_start() until the tone has ended (or was stopped). */
+bool audio_out_tone_active(void);
+
+#ifdef __cplusplus
+}
+#endif

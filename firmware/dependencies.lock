@@ -1,0 +1,67 @@
+dependencies:
+  espressif/cmake_utilities:
+    component_hash: 07e7721fead983abc5ea156ae5b20628bac02602ae3c255856f27f867ecccab8
+    dependencies:
+    - name: idf
+      version: '>=4.1'
+    source:
+      git: https://github.com/espressif/esp-iot-solution.git
+      path: tools/cmake_utilities
+      type: git
+    version: 6747dca0ec2dcb4a1a0bec17fef6d7ea3693b858
+  espressif/esp_lcd_co5300:
+    component_hash: 28c9875e26106e8c3456decbccaae15d9ec52537dad42c46936801c27b8fbb2c
+    dependencies:
+    - name: idf
+      version: '>=5.4'
+    - name: espressif/cmake_utilities
+      version: 0.*
+    source:
+      git: https://github.com/espressif/esp-iot-solution.git
+      path: components/display/lcd/esp_lcd_co5300
+      type: git
+    version: 81b343651c23169112829b8d633367c6c15abb64
+  espressif/esp_lvgl_port:
+    component_hash: c4e97fd3eee2e15dde68d17af7a5a78dff60ee7784897c4a7b990c54800dd3df
+    dependencies:
+    - name: idf
+      version: '>=5.2'
+    - name: lvgl/lvgl
+      public: true
+      version: '>=8,<10'
+    source:
+      git: https://github.com/espressif/esp-bsp.git
+      path: components/esp_lvgl_port
+      type: git
+    version: 4df6ea55593668302db2127b6b41760d5d1b5ea1
+  espressif/mdns:
+    component_hash: 5ee80ec40a6f6157c6e7d6497fc15224fb610bcd2f7b16b6379b981e461901bf
+    dependencies:
+    - name: idf
+      version: '>=5.0'
+    source:
+      git: https://github.com/espressif/esp-protocols.git
+      path: components/mdns
+      type: git
+    version: 5c4650d0ab6f9fde165ae1e3c1ef16714be0a619
+  idf:
+    source:
+      type: idf
+    version: 5.5.5
+  lvgl:
+    component_hash: 0c42d8ad6cbea5e572f78f1ea4f7fc77791c4c0de59f7c9bc2615da4991d1f74
+    dependencies: []
+    source:
+      git: https://github.com/lvgl/lvgl.git
+      path: .
+      type: git
+    version: c033a98afddd65aaafeebea625382a94020fe4a7
+direct_dependencies:
+- espressif/esp_lcd_co5300
+- espressif/esp_lvgl_port
+- espressif/mdns
+- idf
+- lvgl
+manifest_hash: 2895ab2d8d21fabbc32377ada5db0343465a62cc0b60c34e5a8512af5e8c0a88
+target: esp32s3
+version: 2.0.0

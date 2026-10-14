@@ -1,0 +1,9 @@
+## The ui only needs LVGL v9.3.0, the same pinned git source as the display
+## component (the registry is not reachable from the build container). The
+## "overrides" section lives in display/idf_component.yml only.
+dependencies:
+  idf: ">=5.5"
+  lvgl:
+    git: https://github.com/lvgl/lvgl.git
+    version: c033a98afddd65aaafeebea625382a94020fe4a7
+    public: true

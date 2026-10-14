@@ -1,0 +1,15 @@
+## Managed dependencies of spotify_connect.
+##
+## mDNS left ESP-IDF in v5.0 and is now the managed component "espressif/mdns".
+## It is fetched straight from GitHub and pinned to the commit of the tag
+## mdns-v1.14.0, because the build container this was developed in cannot reach
+## the ESP Component Registry.
+##
+## With registry access (normal PC) the three "git/path/version" lines can be
+## replaced by:      version: "~1.14.0"
+dependencies:
+  espressif/mdns:
+    git: https://github.com/espressif/esp-protocols.git
+    path: components/mdns
+    version: 5c4650d0ab6f9fde165ae1e3c1ef16714be0a619
+  idf: ">=5.5"

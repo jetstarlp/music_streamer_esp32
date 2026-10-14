@@ -1,0 +1,31 @@
+# Overrides for a smoke test in Espressif's QEMU (no hardware needed).
+# Usage: docs/BUILD.md, "Smoke test in QEMU". Never flash a build made with
+# this file onto the real board.
+
+# QEMU shows UART0 on stdio; the USB-Serial-JTAG console is not connected there.
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+
+# QEMU 9.2.2 (esp_develop_20260417) crashes on the first flash write when its
+# PSRAM model runs in octal mode; quad mode works. The PSRAM interface is
+# irrelevant for what this test exercises.
+CONFIG_SPIRAM_MODE_QUAD=y
+
+# The emulator has no (complete) RSA/AES/SHA accelerators: the firmware would
+# wait forever for them (first seen in the Diffie-Hellman key generation of the
+# Zeroconf login). Use mbedTLS' software implementations.
+CONFIG_MBEDTLS_HARDWARE_MPI=n
+CONFIG_MBEDTLS_HARDWARE_AES=n
+CONFIG_MBEDTLS_HARDWARE_SHA=n
+
+# Emulated Ethernet (OpenCores MAC) instead of WiFi.
+CONFIG_ETH_USE_OPENETH=y
+CONFIG_MS_NET_QEMU_OPENETH=y
+
+# Placeholders (NOT credentials) so that Spotify Connect starts and waits for a
+# Zeroconf login. They would only be used after a real login.
+CONFIG_MS_SPOTIFY_CLIENT_ID="qemu-placeholder"
+CONFIG_MS_SPOTIFY_CLIENT_SECRET="qemu-placeholder"
+
+# OTA test (tools/qemu_ota_test.py): trust the test CA in components/net/test
+# instead of the public CA bundle. Only possible with MS_NET_QEMU_OPENETH.
+CONFIG_MS_OTA_TEST_CA=y

@@ -1,0 +1,16 @@
+# Music Streamer partition table (16 MB flash, W25Q128).
+# Two 5 MB OTA slots (no factory app) + LittleFS data partition.
+#
+# NVS (WiFi networks, Spotify login, settings) sits at the very END of the
+# flash. The single-file images in dist/ are flashed at 0x0 and span from the
+# bootloader to the end of ota_0 (~1.6 MB); with NVS at the start (0x9000, as
+# before 13.10.2026) every USB flash wiped the stored WiFi networks and login.
+# 0x9000..0x18FFF is left unused on purpose.
+#
+# Name,     Type, SubType,  Offset,    Size,      Flags
+otadata,    data, ota,      0x19000,   0x2000,
+phy_init,   data, phy,      0x1B000,   0x1000,
+ota_0,      app,  ota_0,    0x20000,   0x500000,
+ota_1,      app,  ota_1,    0x520000,  0x500000,
+storage,    data, littlefs, 0xA20000,  0x5D0000,
+nvs,        data, nvs,      0xFF0000,  0x10000,

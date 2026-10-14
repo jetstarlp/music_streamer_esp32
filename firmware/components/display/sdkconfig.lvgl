@@ -1,0 +1,10 @@
+# LVGL options the firmware relies on (copied into firmware/sdkconfig.defaults).
+CONFIG_LV_COLOR_DEPTH_16=y
+# LVGL allocates everything in PSRAM (lv_mem_psram.c), internal RAM only as a
+# fallback, instead of a fixed 64 kB internal pool or plain malloc().
+CONFIG_LV_USE_CUSTOM_MALLOC=y
+CONFIG_LV_USE_CLIB_STRING=y
+CONFIG_LV_USE_CLIB_SPRINTF=y
+CONFIG_LV_DEF_REFR_PERIOD=16
+CONFIG_LV_FONT_MONTSERRAT_14=y
+CONFIG_LV_USE_QRCODE=y

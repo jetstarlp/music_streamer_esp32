@@ -1,0 +1,98 @@
+menu "Music Streamer network (net)"
+
+    comment "Setup hotspot (WiFi portal)"
+
+    config MS_NET_PORTAL_SSID
+        string "Name of the setup hotspot"
+        default "Music-Streamer"
+        help
+            Open WiFi network the device opens for the WiFi setup (at most 32
+            bytes including the optional suffix below).
+
+    config MS_NET_PORTAL_SSID_MAC_SUFFIX
+        bool "Append -XXXX (last two bytes of the MAC address) to the name"
+        default n
+        help
+            Useful when several devices may be in setup mode at the same time.
+
+    config MS_NET_PORTAL_AUTO_S
+        int "Start the setup hotspot after this long without WiFi (s, 0 = never)"
+        default 60
+        range 0 3600
+        help
+            The setup hotspot starts immediately when no network is stored,
+            and after this many seconds without a WiFi connection (after
+            boot or after losing the connection).
+
+    config MS_NET_PORTAL_RESTART_AFTER_SETUP
+        bool "Restart after a network was set up on the portal page"
+        default y
+        help
+            The result page says "Das Gerät startet neu"; the device restarts
+            8 s later and comes up cleanly in station mode. Skipped while a
+            freshly installed update waits for confirmation (a restart would
+            roll it back); then only the hotspot stops.
+
+    comment "Time"
+
+    config MS_NET_TZ
+        string "Time zone (POSIX TZ string)"
+        default "CET-1CEST,M3.5.0,M10.5.0/3"
+        help
+            Default: Europe/Berlin.
+
+    config MS_NET_SNTP_SERVER
+        string "SNTP server"
+        default "pool.ntp.org"
+
+    comment "Firmware updates (OTA)"
+
+    config MS_OTA_MANIFEST_URL
+        string "OTA manifest URL"
+        default ""
+        help
+            HTTPS URL of manifest.json (see docs/NET.md), e.g.
+            https://<user>.github.io/<repo>/ms-waveshare/manifest.json or
+            https://github.com/<user>/<repo>/releases/latest/download/manifest.json.
+            Empty: no update checks. Can be overridden at runtime with the
+            console command "ota url <url>" (stored in NVS, key "ota_url").
+
+    config MS_OTA_AUTO_INSTALL
+        bool "Install updates without asking"
+        default n
+        help
+            Off (default): the scheduled check only reports a newer version
+            (net_ota status AVAILABLE + event); the application asks the user
+            and calls net_ota_install(). On: download and install it as soon
+            as nothing plays, then restart.
+
+    config MS_OTA_FIRST_CHECK_S
+        int "First update check after the network came up (s)"
+        default 120
+        range 10 86400
+
+    config MS_OTA_CHECK_INTERVAL_H
+        int "Update check interval (hours)"
+        default 24
+        range 1 720
+
+    config MS_OTA_VERIFY_TIMEOUT_S
+        int "Roll back an update that is not confirmed within (s)"
+        default 600
+        range 60 86400
+        help
+            After an update the new firmware has to call net_ota_mark_valid()
+            (the application does so once WiFi and Spotify work). Otherwise it
+            restarts after this time and the bootloader starts the previous
+            firmware again.
+
+    config MS_OTA_TEST_CA
+        bool "TEST ONLY: trust the QEMU test CA instead of the public CA bundle"
+        default n
+        depends on MS_NET_QEMU_OPENETH
+        help
+            For tools/qemu_ota_test.py, which serves a manifest and images
+            over HTTPS with a certificate from components/net/test. Only
+            available in the QEMU test build.
+
+endmenu

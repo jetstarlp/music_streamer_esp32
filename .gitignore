@@ -1,0 +1,26 @@
+# ESP-IDF build output and generated configuration
+build/
+build-*/
+sdkconfig
+sdkconfig.old
+# Managed components are re-fetched from the manifest (idf_component.yml).
+# dependencies.lock IS tracked on purpose (pins the exact versions), see docs/BUILD.md.
+managed_components/
+
+# Local secrets (WiFi password, Spotify client id/secret) - never commit
+sdkconfig.secrets
+secrets*
+*.secret
+*.env
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+
+# merged flash images from firmware/tools/build_dist.sh
+dist/

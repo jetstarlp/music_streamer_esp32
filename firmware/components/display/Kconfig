@@ -1,0 +1,48 @@
+menu "Music Streamer display"
+
+    choice MS_DISPLAY_ROTATION_CHOICE
+        prompt "Screen rotation"
+        default MS_DISPLAY_ROTATION_90
+        help
+            The panel is 280 x 456 (portrait). 90 and 270 give the landscape
+            layout of the UI (456 x 280); pick the one that is upright for how
+            the board sits in the enclosure.
+
+        config MS_DISPLAY_ROTATION_0
+            bool "0 degrees (portrait 280 x 456)"
+        config MS_DISPLAY_ROTATION_90
+            bool "90 degrees (landscape 456 x 280)"
+        config MS_DISPLAY_ROTATION_180
+            bool "180 degrees (portrait, upside down)"
+        config MS_DISPLAY_ROTATION_270
+            bool "270 degrees (landscape, other way round)"
+    endchoice
+
+    config MS_DISPLAY_ROTATION
+        int
+        default 0 if MS_DISPLAY_ROTATION_0
+        default 90 if MS_DISPLAY_ROTATION_90
+        default 180 if MS_DISPLAY_ROTATION_180
+        default 270
+
+    config MS_DISPLAY_QSPI_MHZ
+        int "QSPI clock (MHz)"
+        default 40
+        range 10 80
+        help
+            40 MHz is what Waveshare's own example uses.
+
+    config MS_DISPLAY_DEFAULT_BRIGHTNESS
+        int "Brightness after start (%)"
+        default 70
+        range 5 100
+
+    config MS_DISPLAY_BUFFER_LINES
+        int "LVGL draw buffer height (lines of the native 280-pixel width)"
+        default 40
+        range 8 80
+        help
+            Two buffers of 280 x N pixels (16 bit) in internal DMA RAM, plus one
+            more for software rotation. 40 lines = 22.4 kB each.
+
+endmenu

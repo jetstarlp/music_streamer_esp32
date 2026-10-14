@@ -1,0 +1,17 @@
+menu "Music Streamer board"
+
+    choice MS_BOARD
+        prompt "Target board"
+        default MS_BOARD_WAVESHARE_AMOLED_164
+        help
+            Selects the pin map in board_pins.h. The I2S/DAC pins are the same on
+            both boards; the NFC UART pins and the on-board peripherals differ.
+
+        config MS_BOARD_WAVESHARE_AMOLED_164
+            bool "Waveshare ESP32-S3-Touch-AMOLED-1.64 Rev 1.1 (final device)"
+
+        config MS_BOARD_XIAO_ESP32S3_PLUS
+            bool "Seeed Studio XIAO ESP32-S3 Plus (bench tests, no display)"
+    endchoice
+
+endmenu

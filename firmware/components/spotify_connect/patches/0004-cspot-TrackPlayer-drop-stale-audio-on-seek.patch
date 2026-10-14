@@ -1,0 +1,12 @@
+--- a/cspot/src/TrackPlayer.cpp
++++ b/cspot/src/TrackPlayer.cpp
+@@ -234,7 +234,8 @@
+           if (this->dataCallback != nullptr) {
+             auto toWrite = ret;
+ 
+-            while (!eof && currentSongPlaying && !pendingReset && toWrite > 0) {
++            while (!eof && currentSongPlaying && !pendingReset && pendingSeekPositionMs == 0 &&
++                   toWrite > 0) {  // overlay 4: drop stale audio on seek
+               int written = 0;
+               {
+                 std::scoped_lock dataOutLock(dataOutMutex);

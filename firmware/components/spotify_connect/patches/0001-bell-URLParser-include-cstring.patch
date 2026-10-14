@@ -1,0 +1,22 @@
+Repository: philippe44/bell (third_party/cspot/cspot/bell), base cfbc12072b565661f0ab2be3843b928f833f8691
+Kind:       build fix, required for GCC 14 (ESP-IDF 5.5)
+Status:     REFERENCE ONLY - the firmware build applies the same change as a source
+            overlay (source_overlays.cmake, overlay 1); the submodule stays unmodified.
+Check:      git -C third_party/cspot/cspot/bell apply --check <this file>
+
+URLParser.cpp calls strstr() in the BELL_DISABLE_REGEX code path without
+including <cstring>:
+  URLParser.cpp:22:9: error: 'strstr' was not declared in this scope
+
+diff --git a/main/io/URLParser.cpp b/main/io/URLParser.cpp
+index 4a50ab1..b193732 100644
+--- a/main/io/URLParser.cpp
++++ b/main/io/URLParser.cpp
+@@ -1,5 +1,7 @@
+ #include "URLParser.h"
+ 
++#include <cstring>  // for strstr (BELL_DISABLE_REGEX path)
++
+ namespace bell {
+ 
+ #ifdef BELL_DISABLE_REGEX

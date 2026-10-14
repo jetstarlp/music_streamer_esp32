@@ -1,0 +1,53 @@
+## Managed dependencies of the display component.
+##
+## All of them are fetched straight from GitHub and pinned to a commit, because
+## the build container this was developed in cannot reach the ESP Component
+## Registry. Component versions at those commits are noted next to each entry.
+##
+## The upstream manifests of esp_lcd_co5300 and esp_lvgl_port name their own
+## dependencies as registry components (cmake_utilities, lvgl/lvgl).
+## Touch (FT3168) is read directly in display.c, no touch driver component. The "overrides" section below
+## redirects those edges to the same pinned git sources, so the component
+## manager never asks the registry. Requires idf-component-manager >= 2.5.0
+## (check with "python -m idf_component_manager --version").
+## Only ONE manifest per project may contain "overrides" - this one.
+dependencies:
+  idf: ">=5.5"
+
+  # LCD panel driver CO5300 2.2.0 (esp-iot-solution commit 81b3436, 2026-08-31)
+  espressif/esp_lcd_co5300:
+    git: https://github.com/espressif/esp-iot-solution.git
+    path: components/display/lcd/esp_lcd_co5300
+    version: 81b343651c23169112829b8d633367c6c15abb64
+
+  # LVGL port 2.9.0 (same esp-bsp commit; unchanged there since 058d2aa)
+  espressif/esp_lvgl_port:
+    git: https://github.com/espressif/esp-bsp.git
+    path: components/esp_lvgl_port
+    version: 4df6ea55593668302db2127b6b41760d5d1b5ea1
+
+  # LVGL v9.3.0 exactly (tag v9.3.0 = commit c033a98). Public, so that every
+  # component requiring "display" also gets lvgl.h.
+  # Deliberately named "lvgl" (build name "lvgl", not "lvgl__lvgl"): for a git
+  # source the component manager reports the commit hash as COMPONENT_VERSION,
+  # and esp_lvgl_port would then pick its LVGL 8 code path. For a component
+  # named "lvgl" esp_lvgl_port reads the version LVGL itself exports (9.3.0).
+  lvgl:
+    git: https://github.com/lvgl/lvgl.git
+    version: c033a98afddd65aaafeebea625382a94020fe4a7
+    public: true
+
+overrides:
+  - lvgl/lvgl:
+      with:
+        lvgl:
+          git: https://github.com/lvgl/lvgl.git
+          version: c033a98afddd65aaafeebea625382a94020fe4a7
+      reason: "esp_lvgl_port asks the registry for lvgl/lvgl; pin LVGL v9.3.0 from GitHub"
+  - espressif/cmake_utilities:
+      with:
+        espressif/cmake_utilities:
+          git: https://github.com/espressif/esp-iot-solution.git
+          path: tools/cmake_utilities
+          version: 6747dca0ec2dcb4a1a0bec17fef6d7ea3693b858
+      reason: "esp_lcd_co5300 asks the registry for cmake_utilities 0.*; this is 0.5.3"
